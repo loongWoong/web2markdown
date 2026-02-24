@@ -1,0 +1,23 @@
+{
+  "name": "web-browser-mark",
+  "version": "1.0.0",
+  "description": "嵌入式浏览器，可读取网页内容并选中内容区域存为markdown格式",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "keywords": [
+    "electron",
+    "browser",
+    "markdown"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "turndown": "^7.1.2"
+  }
+}
