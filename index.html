@@ -160,6 +160,67 @@
       font-weight: 600;
     }
 
+    .meta-panel {
+      padding: 10px 12px;
+      border-bottom: 1px solid #edf0f7;
+      background: #ffffff;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .meta-panel input,
+    .meta-panel select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d7dcea;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .meta-panel .full {
+      grid-column: 1 / -1;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid #edf0f7;
+      background: #fcfcff;
+      flex-wrap: wrap;
+    }
+
+    .quick-actions button {
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #e2e7f5;
+      background: #f2f5ff;
+      color: #364153;
+    }
+
+    .quick-actions button:hover {
+      background: #e8edff;
+    }
+
+    .summary-card {
+      margin: 10px 12px 0;
+      border: 1px solid #e2e8f5;
+      border-radius: 8px;
+      background: #fafbff;
+      padding: 10px;
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    .summary-card p {
+      margin-top: 6px;
+      line-height: 1.5;
+      color: #374151;
+      white-space: pre-wrap;
+    }
+
     #markdownEditor {
       flex: 1;
       width: 100%;
@@ -208,6 +269,26 @@
       </div>
       <div class="editor-container">
         <div class="editor-header">Markdown 笔记编辑区</div>
+        <div class="meta-panel">
+          <input id="noteTitle" class="full" type="text" placeholder="笔记标题（可选）" />
+          <select id="noteCategory">
+            <option value="待分类">待分类</option>
+            <option value="研究">研究</option>
+            <option value="产品">产品</option>
+            <option value="学习">学习</option>
+            <option value="灵感">灵感</option>
+          </select>
+          <input id="noteTags" type="text" placeholder="标签（用逗号分隔）" />
+        </div>
+        <div class="quick-actions">
+          <button id="appendInsightBtn" type="button">+ 关键洞察模板</button>
+          <button id="appendTodoBtn" type="button">+ 待办清单模板</button>
+          <button id="insertSummaryBtn" type="button">插入信息卡片到Markdown</button>
+        </div>
+        <div class="summary-card">
+          <strong>信息卡片预览</strong>
+          <p id="summaryCard">尚未生成，点击“笔记”后将自动生成来源信息与摘要。</p>
+        </div>
         <textarea id="markdownEditor" placeholder="先在左侧网页中选中内容，点击“笔记”后可在这里编辑，再点击“保存选中内容”进行存储。"></textarea>
       </div>
     </div>
