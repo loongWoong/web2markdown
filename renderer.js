@@ -2,13 +2,14 @@ const urlInput = document.getElementById('url')
 const openBtn = document.getElementById('openBtn')
 const saveBtn = document.getElementById('saveBtn')
 const statusDiv = document.getElementById('status')
+const browserView = document.getElementById('browserView')
 
-let browserOpened = false
+let pageLoaded = false
 
 function showStatus(message, type) {
   statusDiv.textContent = message
   statusDiv.className = `status ${type}`
-  
+
   setTimeout(() => {
     statusDiv.className = 'status'
   }, 3000)
@@ -25,70 +26,70 @@ function isValidUrl(string) {
 
 function normalizeUrl(url) {
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    return 'https://' + url
+    return `https://${url}`
   }
   return url
 }
 
 openBtn.addEventListener('click', async () => {
-  console.log('Open button clicked')
   const url = urlInput.value.trim()
-  console.log('Input URL:', url)
-  
+
   if (!url) {
     showStatus('请输入网页 URL', 'error')
     return
   }
-  
+
   const normalizedUrl = normalizeUrl(url)
-  console.log('Normalized URL:', normalizedUrl)
-  
+
   if (!isValidUrl(normalizedUrl)) {
     showStatus('请输入有效的 URL', 'error')
     return
   }
-  
-  try {
-    console.log('Calling electronAPI.openUrl with:', normalizedUrl)
-    const result = await window.electronAPI.openUrl(normalizedUrl)
-    console.log('openUrl result:', result)
-    browserOpened = true
-    saveBtn.disabled = false
-    showStatus('网页已打开，请在浏览器窗口中选中内容', 'info')
-  } catch (error) {
-    console.error('Error opening URL:', error)
-    showStatus('打开网页失败: ' + error.message, 'error')
-  }
+
+  pageLoaded = false
+  saveBtn.disabled = true
+  browserView.src = normalizedUrl
+  showStatus('正在打开网页...', 'info')
 })
 
 saveBtn.addEventListener('click', async () => {
-  if (!browserOpened) {
+  if (!pageLoaded) {
     showStatus('请先打开网页', 'error')
     return
   }
-  
+
   try {
-    const htmlContent = await window.electronAPI.getSelectedContent()
-    
+    const htmlContent = await browserView.executeJavaScript(`
+      (function() {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+          const range = selection.getRangeAt(0);
+          const div = document.createElement('div');
+          div.appendChild(range.cloneContents());
+          return div.innerHTML;
+        }
+        return null;
+      })()
+    `)
+
     if (!htmlContent) {
-      showStatus('未选中任何内容，请在浏览器窗口中选中要保存的内容', 'error')
+      showStatus('未选中任何内容，请在下方网页中选中要保存的内容', 'error')
       return
     }
-    
+
     const markdown = window.electronAPI.turndown(htmlContent)
-    
     const url = urlInput.value.trim()
-    const filename = url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50) + '.md'
-    
+    const filename = `${url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)}.md`
+
     const savedPath = await window.electronAPI.saveMarkdown(markdown, filename)
-    
+
     if (savedPath) {
-      showStatus('Markdown 文件已保存: ' + savedPath, 'success')
+      showStatus(`Markdown 文件已保存: ${savedPath}`, 'success')
     } else {
       showStatus('保存已取消', 'info')
     }
   } catch (error) {
-    showStatus('保存失败: ' + error.message, 'error')
+    showStatus(`保存失败: ${error.message}`, 'error')
   }
 })
 
@@ -96,4 +97,21 @@ urlInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     openBtn.click()
   }
+})
+
+browserView.addEventListener('did-start-loading', () => {
+  pageLoaded = false
+  saveBtn.disabled = true
+})
+
+browserView.addEventListener('did-stop-loading', () => {
+  pageLoaded = true
+  saveBtn.disabled = false
+  showStatus('网页已加载，请在下方网页中选中内容后点击保存', 'success')
+})
+
+browserView.addEventListener('did-fail-load', () => {
+  pageLoaded = false
+  saveBtn.disabled = true
+  showStatus('网页加载失败，请检查 URL 是否可访问', 'error')
 })
