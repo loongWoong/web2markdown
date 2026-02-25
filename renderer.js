@@ -1,6 +1,7 @@
 const urlInput = document.getElementById('url')
 const openBtn = document.getElementById('openBtn')
 const noteBtn = document.getElementById('noteBtn')
+const appendNoteBtn = document.getElementById('appendNoteBtn')
 const saveBtn = document.getElementById('saveBtn')
 const statusDiv = document.getElementById('status')
 const browserView = document.getElementById('browserView')
@@ -12,6 +13,9 @@ const summaryCard = document.getElementById('summaryCard')
 const appendInsightBtn = document.getElementById('appendInsightBtn')
 const appendTodoBtn = document.getElementById('appendTodoBtn')
 const insertSummaryBtn = document.getElementById('insertSummaryBtn')
+const formatBtn = document.getElementById('formatBtn')
+const highlightBtn = document.getElementById('highlightBtn')
+const saveToMdBtn = document.getElementById('saveToMdBtn')
 
 const DRAFT_KEY = 'web2markdown.draft'
 
@@ -140,6 +144,91 @@ function appendTemplate(text) {
   persistDraft()
 }
 
+function formatMarkdown(text) {
+  let formatted = text
+
+  formatted = formatted.replace(/!\[\]\(\s*`([^`]+)`\)/g, '![]($1)')
+
+  formatted = formatted.replace(/!\[\]\(@\/assets\/img\/answer\/yes\.png\)/g, '✅')
+
+  formatted = formatted.replace(/\\?\[\s*单选题\s*\\?\]/g, '**[单选题]**')
+
+  formatted = formatted.replace(/\\?\[\s*多选题\s*\\?\]/g, '**[多选题]**')
+
+  formatted = formatted.replace(/\\?\[\s*判断题\s*\\?\]/g, '**[判断题]**')
+
+  formatted = formatted.replace(/正确答案：([A-D])/g, '正确答案：**$1**')
+
+  formatted = formatted.replace(/你的答案：([A-D])/g, '你的答案：**$1**')
+
+  formatted = formatted.replace(/答案\s*\n\s*正确答案/g, '正确答案')
+
+  formatted = formatted.replace(/答题\s*\n\s*问题\d+/g, '')
+
+  formatted = formatted.replace(/!\[\]\([^)]*可拖拽显示更多[^)]*\)/g, '')
+
+  formatted = formatted.replace(/可拖拽显示更多`/g, '')
+
+  formatted = formatted.replace(/^.*可拖拽显示.*$/gm, '')
+
+  formatted = formatted.replace(/答题\s*\n\s*\\\\[\s*\n\s*单选题\s*\n\s*\\\\]/g, '答题 [单选题]')
+
+  formatted = formatted.replace(/答题\s*\n\s*\\\\[\s*\n\s*多选题\s*\n\s*\\\\]/g, '答题 [多选题]')
+
+  formatted = formatted.replace(/答题\s*\n\s*\\\\[\s*\n\s*判断题\s*\n\s*\\\\]/g, '答题 [判断题]')
+
+  formatted = formatted.replace(/\\\\[\s*\n\s*单选题\s*\n\s*\\\\]/g, '[单选题]')
+
+  formatted = formatted.replace(/\\\\[\s*\n\s*多选题\s*\n\s*\\\\]/g, '[多选题]')
+
+  formatted = formatted.replace(/\\\\[\s*\n\s*判断题\s*\n\s*\\\\]/g, '[判断题]')
+
+  formatted = formatted.replace(/答题\s*\n\s*\\\\[\s*\n\s*单选题\s*\\\\]/g, '答题 [单选题]')
+
+  formatted = formatted.replace(/答题\s*\n\s*\\\\[\s*\n\s*多选题\s*\\\\]/g, '答题 [多选题]')
+
+  formatted = formatted.replace(/答题\s*\n\s*\\\\[\s*\n\s*判断题\s*\\\\]/g, '答题 [判断题]')
+
+  formatted = formatted.replace(/\\\\[\s*\n\s*单选题\s*\\\\]/g, '[单选题]')
+
+  formatted = formatted.replace(/\\\\[\s*\n\s*多选题\s*\\\\]/g, '[多选题]')
+
+  formatted = formatted.replace(/\\\\[\s*\n\s*判断题\s*\\\\]/g, '[判断题]')
+
+  formatted = formatted.replace(/正确答案\s*\n\s*：\s*\n\s*([A-D])/g, '正确答案：$1')
+
+  formatted = formatted.replace(/你的答案\s*\n\s*：\s*\n\s*([A-D])/g, '你的答案：$1')
+
+  formatted = formatted.replace(/^([A-D])\s*\n\s*([^\n]+)$/gm, '$1. $2')
+
+  formatted = formatted.replace(/解析\s*\n/g, '### 解析\n\n')
+
+  formatted = formatted.replace(/第[一二三四五六七八九十]+章.*?\/.*?第[一二三四五六七八九十]+节.*/g, (match) => `**${match}**`)
+
+  formatted = formatted.replace(/\n{3,}/g, '\n\n')
+
+  formatted = formatted.replace(/^([A-D])\s*\n\s*([0-9]+)/gm, '$1. $2')
+
+  formatted = formatted.replace(/([A-D])\s*\n\s*([0-9]+)/g, '$1. $2')
+
+  return formatted.trim()
+}
+
+function highlightMarkdown(text) {
+  const selectionStart = markdownEditor.selectionStart
+  const selectionEnd = markdownEditor.selectionEnd
+
+  if (selectionStart === selectionEnd) {
+    return text
+  }
+
+  const before = text.substring(0, selectionStart)
+  const selected = text.substring(selectionStart, selectionEnd)
+  const after = text.substring(selectionEnd)
+
+  return `${before}**${selected}**${after}`
+}
+
 async function getSelectedHtml() {
   return browserView.executeJavaScript(`
     (function() {
@@ -172,6 +261,7 @@ openBtn.addEventListener('click', async () => {
 
   pageLoaded = false
   noteBtn.disabled = true
+  appendNoteBtn.disabled = true
   saveBtn.disabled = true
   markdownEditor.value = ''
   currentSummary = ''
@@ -191,7 +281,7 @@ noteBtn.addEventListener('click', async () => {
     const htmlContent = await getSelectedHtml()
 
     if (!htmlContent) {
-      showStatus('未选中任何内容，请在左侧网页中选中后再点击“笔记”', 'error')
+      showStatus('未选中任何内容，请在左侧网页中选中后再点击"笔记"', 'error')
       return
     }
 
@@ -200,7 +290,35 @@ noteBtn.addEventListener('click', async () => {
     currentSummary = generateSummary(markdownEditor.value)
     summaryCard.textContent = currentSummary
     persistDraft()
-    showStatus('已载入选中内容，请在右侧编辑后点击“保存选中内容”', 'success')
+    showStatus('已载入选中内容，请在右侧编辑后点击"保存选中内容"', 'success')
+  } catch (error) {
+    showStatus(`获取选中内容失败: ${error.message}`, 'error')
+  }
+})
+
+appendNoteBtn.addEventListener('click', async () => {
+  if (!pageLoaded) {
+    showStatus('请先打开网页', 'error')
+    return
+  }
+
+  try {
+    const htmlContent = await getSelectedHtml()
+
+    if (!htmlContent) {
+      showStatus('未选中任何内容，请在左侧网页中选中后再点击"续写"', 'error')
+      return
+    }
+
+    const newContent = window.electronAPI.turndown(htmlContent)
+    const currentContent = markdownEditor.value.trim()
+    const separator = currentContent ? '\n\n---\n\n' : ''
+    markdownEditor.value = currentContent + separator + newContent
+    markdownEditor.focus()
+    currentSummary = generateSummary(markdownEditor.value)
+    summaryCard.textContent = currentSummary
+    persistDraft()
+    showStatus('已追加选中内容到编辑器', 'success')
   } catch (error) {
     showStatus(`获取选中内容失败: ${error.message}`, 'error')
   }
@@ -253,6 +371,51 @@ insertSummaryBtn.addEventListener('click', () => {
   showStatus('已将信息卡片摘要插入 Markdown。', 'success')
 })
 
+formatBtn.addEventListener('click', () => {
+  const currentText = markdownEditor.value
+  if (!currentText.trim()) {
+    showStatus('Markdown 编辑区为空，无法格式化', 'error')
+    return
+  }
+  const formattedText = formatMarkdown(currentText)
+  markdownEditor.value = formattedText
+  persistDraft()
+  showStatus('已格式化 Markdown 内容', 'success')
+})
+
+highlightBtn.addEventListener('click', () => {
+  const currentText = markdownEditor.value
+  if (!currentText.trim()) {
+    showStatus('Markdown 编辑区为空，无法高亮', 'error')
+    return
+  }
+  const highlightedText = highlightMarkdown(currentText)
+  markdownEditor.value = highlightedText
+  persistDraft()
+  showStatus('已添加高亮标注', 'success')
+})
+
+saveToMdBtn.addEventListener('click', async () => {
+  const markdown = markdownEditor.value.trim()
+  if (!markdown) {
+    showStatus('Markdown 编辑区为空，无法保存', 'error')
+    return
+  }
+
+  const title = noteTitleInput.value.trim() || '未命名笔记'
+  const category = noteCategoryInput.value || '待分类'
+  const filename = `${title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.md`
+
+  try {
+    const savedPath = await window.electronAPI.saveToMdFolder(markdown, filename, category)
+    if (savedPath) {
+      showStatus(`已保存到 md 文件夹: ${savedPath}`, 'success')
+    }
+  } catch (error) {
+    showStatus(`保存失败: ${error.message}`, 'error')
+  }
+})
+
 urlInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     openBtn.click()
@@ -278,13 +441,15 @@ browserView.addEventListener('did-start-loading', () => {
 browserView.addEventListener('did-stop-loading', () => {
   pageLoaded = true
   noteBtn.disabled = false
+  appendNoteBtn.disabled = false
   saveBtn.disabled = false
-  showStatus('网页已加载，请先点击“笔记”将选中内容载入右侧编辑区', 'success')
+  showStatus('网页已加载，请先点击"笔记"将选中内容载入右侧编辑区', 'success')
 })
 
 browserView.addEventListener('did-fail-load', () => {
   pageLoaded = false
   noteBtn.disabled = true
+  appendNoteBtn.disabled = true
   saveBtn.disabled = true
   showStatus('网页加载失败，请检查 URL 是否可访问', 'error')
 })
