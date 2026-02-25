@@ -126,10 +126,53 @@
       display: block;
     }
 
-    .browser-container {
+    .content {
       flex: 1;
-      padding: 12px;
+      display: flex;
       min-height: 0;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .browser-container {
+      flex: 3;
+      padding: 0;
+      min-width: 0;
+    }
+
+    .editor-container {
+      flex: 2;
+      min-width: 320px;
+      background: white;
+      border: 1px solid #d8ddea;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .editor-header {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e6e8f2;
+      background: #f8f9ff;
+      font-size: 13px;
+      color: #4a5568;
+      font-weight: 600;
+    }
+
+    #markdownEditor {
+      flex: 1;
+      width: 100%;
+      border: none;
+      padding: 12px;
+      resize: none;
+      font-size: 14px;
+      line-height: 1.5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    }
+
+    #markdownEditor:focus {
+      outline: none;
     }
 
     webview {
@@ -152,14 +195,21 @@
       <div class="controls">
         <input type="text" id="url" placeholder="https://example.com" />
         <button class="btn-primary" id="openBtn">打开网页</button>
+        <button class="btn-secondary" id="noteBtn" disabled>笔记</button>
         <button class="btn-secondary" id="saveBtn" disabled>保存选中内容</button>
       </div>
 
       <div class="status" id="status"></div>
     </div>
 
-    <div class="browser-container">
-      <webview id="browserView" src="https://example.com" allowpopups></webview>
+    <div class="content">
+      <div class="browser-container">
+        <webview id="browserView" src="https://example.com" allowpopups></webview>
+      </div>
+      <div class="editor-container">
+        <div class="editor-header">Markdown 笔记编辑区</div>
+        <textarea id="markdownEditor" placeholder="先在左侧网页中选中内容，点击“笔记”后可在这里编辑，再点击“保存选中内容”进行存储。"></textarea>
+      </div>
     </div>
   </div>
 

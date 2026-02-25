@@ -1,8 +1,10 @@
 const urlInput = document.getElementById('url')
 const openBtn = document.getElementById('openBtn')
+const noteBtn = document.getElementById('noteBtn')
 const saveBtn = document.getElementById('saveBtn')
 const statusDiv = document.getElementById('status')
 const browserView = document.getElementById('browserView')
+const markdownEditor = document.getElementById('markdownEditor')
 
 let pageLoaded = false
 
@@ -31,6 +33,25 @@ function normalizeUrl(url) {
   return url
 }
 
+function buildFilename(url) {
+  return `${url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)}.md`
+}
+
+async function getSelectedHtml() {
+  return browserView.executeJavaScript(`
+    (function() {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+        const range = selection.getRangeAt(0);
+        const div = document.createElement('div');
+        div.appendChild(range.cloneContents());
+        return div.innerHTML;
+      }
+      return null;
+    })()
+  `)
+}
+
 openBtn.addEventListener('click', async () => {
   const url = urlInput.value.trim()
 
@@ -47,9 +68,33 @@ openBtn.addEventListener('click', async () => {
   }
 
   pageLoaded = false
+  noteBtn.disabled = true
   saveBtn.disabled = true
+  markdownEditor.value = ''
   browserView.src = normalizedUrl
   showStatus('正在打开网页...', 'info')
+})
+
+noteBtn.addEventListener('click', async () => {
+  if (!pageLoaded) {
+    showStatus('请先打开网页', 'error')
+    return
+  }
+
+  try {
+    const htmlContent = await getSelectedHtml()
+
+    if (!htmlContent) {
+      showStatus('未选中任何内容，请在左侧网页中选中后再点击“笔记”', 'error')
+      return
+    }
+
+    markdownEditor.value = window.electronAPI.turndown(htmlContent)
+    markdownEditor.focus()
+    showStatus('已载入选中内容，请在右侧编辑后点击“保存选中内容”', 'success')
+  } catch (error) {
+    showStatus(`获取选中内容失败: ${error.message}`, 'error')
+  }
 })
 
 saveBtn.addEventListener('click', async () => {
@@ -58,29 +103,16 @@ saveBtn.addEventListener('click', async () => {
     return
   }
 
+  const markdown = markdownEditor.value.trim()
+
+  if (!markdown) {
+    showStatus('右侧暂无可保存内容，请先点击“笔记”并编辑', 'error')
+    return
+  }
+
   try {
-    const htmlContent = await browserView.executeJavaScript(`
-      (function() {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
-          const range = selection.getRangeAt(0);
-          const div = document.createElement('div');
-          div.appendChild(range.cloneContents());
-          return div.innerHTML;
-        }
-        return null;
-      })()
-    `)
-
-    if (!htmlContent) {
-      showStatus('未选中任何内容，请在下方网页中选中要保存的内容', 'error')
-      return
-    }
-
-    const markdown = window.electronAPI.turndown(htmlContent)
     const url = urlInput.value.trim()
-    const filename = `${url.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)}.md`
-
+    const filename = buildFilename(url)
     const savedPath = await window.electronAPI.saveMarkdown(markdown, filename)
 
     if (savedPath) {
@@ -101,17 +133,20 @@ urlInput.addEventListener('keypress', (e) => {
 
 browserView.addEventListener('did-start-loading', () => {
   pageLoaded = false
+  noteBtn.disabled = true
   saveBtn.disabled = true
 })
 
 browserView.addEventListener('did-stop-loading', () => {
   pageLoaded = true
+  noteBtn.disabled = false
   saveBtn.disabled = false
-  showStatus('网页已加载，请在下方网页中选中内容后点击保存', 'success')
+  showStatus('网页已加载，请先点击“笔记”将选中内容载入右侧编辑区', 'success')
 })
 
 browserView.addEventListener('did-fail-load', () => {
   pageLoaded = false
+  noteBtn.disabled = true
   saveBtn.disabled = true
   showStatus('网页加载失败，请检查 URL 是否可访问', 'error')
 })
