@@ -13,48 +13,53 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #f3f5fb;
       height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      overflow: hidden;
     }
 
-    .container {
+    .app {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toolbar {
       background: white;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      padding: 40px;
-      width: 90%;
-      max-width: 600px;
+      border-bottom: 1px solid #e6e8f2;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .title {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
     }
 
     h1 {
       color: #333;
-      margin-bottom: 10px;
-      font-size: 28px;
+      font-size: 22px;
     }
 
     .subtitle {
       color: #666;
-      margin-bottom: 30px;
-      font-size: 14px;
+      font-size: 13px;
     }
 
-    .input-group {
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      color: #555;
-      margin-bottom: 8px;
-      font-weight: 500;
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
 
     input[type="text"] {
-      width: 100%;
-      padding: 12px 16px;
+      flex: 1;
+      min-width: 280px;
+      padding: 10px 14px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
       font-size: 14px;
@@ -66,21 +71,15 @@
       border-color: #667eea;
     }
 
-    .button-group {
-      display: flex;
-      gap: 12px;
-      margin-top: 30px;
-    }
-
     button {
-      flex: 1;
-      padding: 12px 24px;
+      padding: 10px 18px;
       border: none;
       border-radius: 8px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
+      white-space: nowrap;
     }
 
     .btn-primary {
@@ -89,24 +88,23 @@
     }
 
     .btn-primary:hover {
-      transform: translateY(-2px);
+      transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
     }
 
     .btn-secondary {
-      background: #f5f5f5;
+      background: #f0f2f7;
       color: #333;
     }
 
     .btn-secondary:hover {
-      background: #e0e0e0;
+      background: #e3e8f3;
     }
 
     .status {
-      margin-top: 20px;
-      padding: 12px;
+      padding: 10px 12px;
       border-radius: 8px;
-      font-size: 14px;
+      font-size: 13px;
       display: none;
     }
 
@@ -128,57 +126,40 @@
       display: block;
     }
 
-    .instructions {
-      margin-top: 30px;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border-left: 4px solid #667eea;
+    .browser-container {
+      flex: 1;
+      padding: 12px;
+      min-height: 0;
     }
 
-    .instructions h3 {
-      color: #333;
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-
-    .instructions ol {
-      color: #555;
-      padding-left: 20px;
-      font-size: 14px;
-      line-height: 1.8;
-    }
-
-    .instructions li {
-      margin-bottom: 8px;
+    webview {
+      width: 100%;
+      height: 100%;
+      border: 1px solid #d8ddea;
+      border-radius: 10px;
+      background: white;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🌐 Web Browser Mark</h1>
-    <p class="subtitle">嵌入式浏览器 - 选中网页内容并保存为 Markdown</p>
+  <div class="app">
+    <div class="toolbar">
+      <div class="title">
+        <h1>🌐 Web Browser Mark</h1>
+        <p class="subtitle">将输入区与网页浏览区合并到同一窗口</p>
+      </div>
 
-    <div class="input-group">
-      <label for="url">网页 URL</label>
-      <input type="text" id="url" placeholder="https://example.com" />
+      <div class="controls">
+        <input type="text" id="url" placeholder="https://example.com" />
+        <button class="btn-primary" id="openBtn">打开网页</button>
+        <button class="btn-secondary" id="saveBtn" disabled>保存选中内容</button>
+      </div>
+
+      <div class="status" id="status"></div>
     </div>
 
-    <div class="button-group">
-      <button class="btn-primary" id="openBtn">打开网页</button>
-      <button class="btn-secondary" id="saveBtn" disabled>保存选中内容</button>
-    </div>
-
-    <div class="status" id="status"></div>
-
-    <div class="instructions">
-      <h3>使用说明</h3>
-      <ol>
-        <li>输入网页 URL 并点击"打开网页"</li>
-        <li>在打开的浏览器窗口中选中你想要的内容</li>
-        <li>返回主窗口点击"保存选中内容"</li>
-        <li>选择保存位置，内容将转换为 Markdown 格式</li>
-      </ol>
+    <div class="browser-container">
+      <webview id="browserView" src="https://example.com" allowpopups></webview>
     </div>
   </div>
 
